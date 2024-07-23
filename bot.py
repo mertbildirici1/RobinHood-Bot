@@ -5,6 +5,8 @@ import robin_stocks.robinhood as rh
 import pandas as pd
 import numpy as np
 
+from cointegration_test import check_cointegration
+
 load_dotenv()
 
 username = os.getenv('ROBINHOOD_USERNAME')
@@ -41,13 +43,21 @@ def fetch_latest_price(symbol):
 
 symbol1 = 'AAPL'
 symbol2 = 'MSFT'
-interval = 'day'
-span = '5year'
+interval = 'week'
+span = 'year'
 
 df1 = fetch_historical_data(symbol1, interval, span)
 df2 = fetch_historical_data(symbol2, interval, span)
 
 df1, df2 = df1.align(df2, join='inner', axis=0)
+
+# Check for cointegration
+coint_result = check_cointegration(df1['close_price'], df2['close_price'])
+test_statistic, p_value, critical_values = coint_result
+
+if p_value >= 0.05:
+    print(f"The series {symbol1} and {symbol2} are not cointegrated with p-value {p_value}. Exiting.")
+    exit()
 
 df1['spread'] = df1['close_price'] - df2['close_price']
 
@@ -65,6 +75,14 @@ positions = {
 }
 
 def trade_pairs(df, symbol1, symbol2, entry_threshold, exit_threshold):
+    # Check for cointegration
+    coint_result = check_cointegration(df['close_price'], df2['close_price'])
+    test_statistic, p_value, critical_values = coint_result
+
+    if p_value >= 0.05:
+        print(f"The series {symbol1} and {symbol2} are not cointegrated with p-value {p_value}. Exiting.")
+        return
+
     for index, row in df.iterrows():
         if row['zscore'] > entry_threshold and positions['symbol1'] <= 0 and positions['symbol2'] >= 0:
             sell_stock(symbol1, 1)
