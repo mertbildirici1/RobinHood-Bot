@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import robin_stocks.robinhood as rh
 import pandas as pd
 import numpy as np
+from knn import prepare_features, train_knn
 
 from cointegration_test import check_cointegration
 
@@ -73,6 +74,10 @@ positions = {
     'symbol1': 0,
     'symbol2': 0
 }
+
+X, y = prepare_features(df1, df2)
+knn_model = train_knn(X, y, n_neighbors=5)
+
 
 def trade_pairs(df, symbol1, symbol2, entry_threshold, exit_threshold):
     # Check for cointegration
